@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Burhan Stationery Stock</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+body{font-family:Poppins;background:#eef2f7;padding:20px}
+.container{max-width:720px;margin:auto}
+.header{text-align:center}
+.header h1{margin:0;font-size:22px;color:#0b3c5d}
+.header h2{margin:5px 0 10px;font-size:15px;color:#444}
+.datetime{text-align:center;font-size:13px;color:#555;margin-bottom:15px}
+.search-box{display:flex;gap:10px}
+input{flex:1;padding:10px;font-size:16px}
+button{padding:10px 14px;border:none;cursor:pointer;background:#0b5ed7;color:#fff;border-radius:5px}
+.card{background:#fff;margin-top:20px;padding:16px;border-radius:12px;
+box-shadow:0 6px 15px rgba(0,0,0,.15);display:none}
+.card h3{text-align:center;margin-bottom:14px;color:#0b3c5d}
+.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #ccc;font-size:14px}
+.row:last-child{border:none}
+.actions{display:flex;justify-content:space-between;margin-top:15px}
+
+/* LOW STOCK */
+.low-card{border:3px solid #dc3545;background:#fff5f5;animation:pulse 1.5s infinite}
+@keyframes pulse{0%{box-shadow:0 0 6px red}50%{box-shadow:0 0 16px red}100%{box-shadow:0 0 6px red}}
+.alert{background:#dc3545;color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.3}}
+.ok{color:green;font-weight:600}
+.gray{background:#6c757d}
+</style>
+</head>
+
+<body>
+<div class="container" id="printArea">
+
+<div class="header">
+<h1>BUKHARIYA EDUCATIONAL CENTRE</h1>
+<h2>Burhan Stationery Stock Details</h2>
+</div>
+
+<div class="datetime" id="datetime"></div>
+
+<div class="search-box">
+<input id="code" placeholder="Enter Item Code (Eg: F1)">
+<button onclick="searchItem()">Search</button>
+</div>
+
+<div class="card" id="card">
+<h3 id="itemName"></h3>
+
+<div class="row"><span>Category</span><span id="cat"></span></div>
+<div class="row"><span>Opening Stock</span><span id="open"></span></div>
+<div class="row"><span>Total Stock In</span><span id="in"></span></div>
+<div class="row"><span>Total Stock Out</span><span id="out"></span></div>
+<div class="row"><span>Current Stock</span><span id="current"></span></div>
+<div class="row"><span>Purchase Price</span><span id="purchase"></span></div>
+<div class="row"><span>Selling Price</span><span id="selling"></span></div>
+<div class="row"><span>Total Stock Value</span><span id="value"></span></div>
+<div class="row"><span>Status</span><span id="status"></span></div>
+
+<div class="actions">
+<button onclick="downloadPDF()">Download PDF</button>
+<button class="gray" onclick="newSearch()">New Search</button>
+</div>
+</div>
+
+</div>
+
+<script>
+const url="https://docs.google.com/spreadsheets/d/e/2PACX-1vQqCfLpp-CK_qZ0rlDKT0SbUTL--j24S-S4bCTK33aCJDmkH1YVgoll_g8INDHJO0YOBvgcpaWsMcY_/pub?output=tsv";
+
+async function searchItem(){
+ const code=document.getElementById("code").value.trim().toUpperCase();
+ if(!code) return;
+
+ const res=await fetch(url);
+ const text=await res.text();
+
+ const rows=text.trim().split("\n").map(r =>
+   r.split("\t").map(c => c.trim())
+ );
+
+ for(let i=1;i<rows.length;i++){
+   if(rows[i][0].toUpperCase() === code){
+
+     document.getElementById("itemName").innerText=rows[i][1];
+     document.getElementById("cat").innerText=rows[i][2];
+     document.getElementById("open").innerText=rows[i][4];
+     document.getElementById("in").innerText=rows[i][5];
+     document.getElementById("out").innerText=rows[i][6];
+     document.getElementById("current").innerText=rows[i][7];
+     document.getElementById("purchase").innerText=rows[i][8];
+     document.getElementById("selling").innerText=rows[i][9];
+     document.getElementById("value").innerText=rows[i][10];
+
+     const card=document.getElementById("card");
+     card.classList.remove("low-card");
+
+     if(rows[i][12].includes("LOW")){
+       document.getElementById("status").innerHTML='<span class="alert">⚠ LOW STOCK</span>';
+       card.classList.add("low-card");
+     }else{
+       document.getElementById("status").innerHTML='<span class="ok">✔ OK</span>';
+     }
+
+     card.style.display="block";
+     return;
+   }
+ }
+ alert("Item Code not found");
+}
+
+function downloadPDF(){
+ html2pdf().from(document.getElementById("printArea")).save("Stock_Details.pdf");
+}
+function newSearch(){
+ document.getElementById("card").style.display="none";
+ document.getElementById("code").value="";
+}
+
+setInterval(()=>{
+ const d=new Date();
+ document.getElementById("datetime").innerText=
+ d.toLocaleDateString()+" | "+d.toLocaleTimeString();
+},1000);
+</script>
+
+</body>
+</html>
